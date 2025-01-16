@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소상공인 기준 확인</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .creator {
+            font-size: 16px;
+            color: #666;
+            vertical-align: bottom;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            white-space: pre-line; /* 줄바꿈을 위해 추가 */
+        }
+    </style>
+</head>
+<body>
+    <h1>소상공인 기준 확인</h1>
+    <span class="creator">비즈니스 헬퍼 김팀장</span>
+    <form id="criteriaForm">
+        <label for="industry">업종:</label>
+        <select id="industry" required>
+            <option value="">-- 선택하세요 --</option>
+            <!-- 업종 옵션은 JavaScript로 동적 생성 -->
+        </select>
+
+        <label for="sales">연평균 매출액 (억 원):</label>
+        <select id="sales" required>
+            <option value="">-- 선택하세요 --</option>
+            <option value="30">30억 미만</option>
+            <option value="50">50억 미만</option>
+            <option value="80">80억 미만</option>
+            <option value="120">120억 미만</option>
+        </select>
+
+        <label for="employees">상시근로자수:</label>
+        <select id="employees" required>
+            <option value="">-- 선택하세요 --</option>
+            <option value="5미만">5명 미만</option>
+            <option value="5이상10미만">5명 이상 10명 미만</option>
+            <option value="10이상">10명 이상</option>
+        </select>
+
+        <label for="nonProfit">비영리 여부:</label>
+        <select id="nonProfit" required>
+            <option value="">-- 선택하세요 --</option>
+            <option value="false">비영리</option>
+            <option value="true">영리</option>
+        </select>
+
+        <button type="button" onclick="checkCriteria()">확인</button>
+    </form>
+
+    <div id="result" class="result"></div>
+
+    <script>
+        // 업종별 기준 데이터
+        const industryCriteria = {
+            "광업": { sales: 80, employees: 10 },
+            "식료품 제조업": { sales: 120, employees: 10 },
+            "음료 제조업": { sales: 120, employees: 10 },
+            "의복, 의복액세서리 및 모피제품 제조업": { sales: 120, employees: 10 },
+            "가죽, 가방 및 신발 제조업": { sales: 120, employees: 10 },
+            "코크스, 연탄 및 석유정제품 제조업": { sales: 120, employees: 10 },
+            "화학물질 및 화학제품 제조업 (의약품 제조업은 제외)": { sales: 120, employees: 10 },
+            "의료용 물질 및 의약품 제조업": { sales: 120, employees: 10 },
+            "비금속 광물제품 제조업": { sales: 120, employees: 10 },
+            "1차 금속 제조업": { sales: 120, employees: 10 },
+            "금속가공제품 제조업 (기계 및 가구 제조업은 제외)": { sales: 120, employees: 10 },
+            "전자부품, 컴퓨터, 영상, 음향 및 통신장비 제조업": { sales: 120, employees: 10 },
+            "전기장비 제조업": { sales: 120, employees: 10 },
+            "그 밖의 기계 및 장비 제조업": { sales: 120, employees: 10 },
+            "자동차 및 트레일러 제조업": { sales: 120, employees: 10 },
+            "가구 제조업": { sales: 120, employees: 10 },
+            "전기, 가스, 증기 및 공기조절 공급업": { sales: 120, employees: 10 },
+            "수도업": { sales: 120, employees: 10 },
+            "농업, 임업 및 어업": { sales: 80, employees: 5 },
+            "담배 제조업": { sales: 80, employees: 5 },
+            "섬유제품 제조업 (의복 제조업은 제외)": { sales: 80, employees: 5 },
+            "목재 및 나무제품 제조업 (가구 제조업은 제외)": { sales: 80, employees: 5 },
+            "펄프, 종이 및 종이제품 제조업": { sales: 80, employees: 5 },
+            "인쇄 및 기록매체 복제업": { sales: 80, employees: 5 },
+            "고무제품 및 플라스틱제품 제조업": { sales: 80, employees: 5 },
+            "의료, 정밀, 광학기기 및 시계 제조업": { sales: 80, employees: 5 },
+            "그 밖의 운송장비 제조업": { sales: 80, employees: 5 },
+            "그 밖의 제품 제조업": { sales: 80, employees: 5 },
+            "건설업": { sales: 80, employees: 10 },
+            "운수 및 창고업": { sales: 80, employees: 10 },
+            "금융 및 보험업": { sales: 80, employees: 5 },
+            "도매 및 소매업": { sales: 50, employees: 5 },
+            "정보통신업": { sales: 50, employees: 5 },
+            "수도, 하수 및 폐기물 처리, 원료재생업 (수도업은 제외)": { sales: 30, employees: 5 },
+            "부동산업": { sales: 30, employees: 5 },
+            "전문ㆍ과학 및 기술 서비스업": { sales: 30, employees: 5 },
+            "사업시설관리, 사업지원 및 임대 서비스업": { sales: 30, employees: 5 },
+            "예술, 스포츠 및 여가 관련 서비스업": { sales: 30, employees: 5 },
+            "산업용 기계 및 장비 수리업": { sales: 30, employees: 5 },
+            "숙박 및 음식점업": { sales: 30, employees: 5 },
+            "교육 서비스업": { sales: 30, employees: 5 },
+            "보건업 및 사회복지 서비스업": { sales: 30, employees: 5 },
+            "수리(修理) 및 기타 개인 서비스업": { sales: 30, employees: 5 },
+        };
+
+        // 업종 드롭다운 메뉴 생성
+        const industrySelect = document.getElementById("industry");
+        for (const industry in industryCriteria) {
+            const option = document.createElement("option");
+            option.value = industry;
+            option.textContent = industry;
+            industrySelect.appendChild(option);
+        }
+
+        // 기준 확인 함수
+        function checkCriteria() {
+            const industry = document.getElementById("industry").value;
+            const sales = parseInt(document.getElementById("sales").value);
+            const employees = document.getElementById("employees").value;
+            const nonProfit = document.getElementById("nonProfit").value === "true";
+
+            const criteria = industryCriteria[industry];
+            if (!criteria) {
+                alert("업종을 선택하세요.");
+                return;
+            }
+
+            let result = "";
+            let reasons = [];
+
+            // 매출액 기준 확인
+            if (sales > criteria.sales) {
+                reasons.push(`- 연평균 매출액이 ${criteria.sales}억 원을 초과했습니다.`);
+            }
+
+            // 상시근로자수 기준 확인
+            if (employees === "5이상10미만" && criteria.employees < 10) {
+                reasons.push(`- 상시근로자수가 10명 미만이어야 합니다.`);
+            } else if (employees === "10이상") {
+                reasons.push(`- 상시근로자수가 10명 이상입니다.`);
+            } else if (employees === "5미만" && criteria.employees < 5) {
+                reasons.push(`- 상시근로자수가 5명 미만이어야 합니다.`);
+            }
+
+            // 비영리 여부 확인
+            if (!nonProfit) {
+                reasons.push(`- 영리 사업자가 아닙니다.`);
+            }
+
+            // 결과 출력
+            if (reasons.length === 0) {
+                result = "소상공인 기준에 부합합니다!";
+            } else {
+                result = "소상공인 기준에 부합하지 않습니다.\n" + reasons.join("\n");
+            }
+
+            document.getElementById("result").textContent = result;
+        }
+    </script>
+</body>
+</html>
